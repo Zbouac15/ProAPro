@@ -3,7 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import google.generativeai as genai
-from tqdm import tqdm
 
 # Set your Google Cloud API key
 google_api_key = "AIzaSyCcgTczWOlqBMjVjOkcqDJyeE10TsjdkCE"
@@ -36,11 +35,9 @@ def find_best_matches(product_name, database):
 
     "\n\nAssistant:"
     """
-    print(f"Processing: {product_name}")
     try:
         response = model.generate_content([prompt])
         matches = response.text.strip().split(", ")
-        # Handle cases where response is empty or only contains whitespace
         if not matches or matches[0] == "":
             return ["no_match"]
         return matches
@@ -76,7 +73,11 @@ def match_products(input_df, database_df):
         matched_products.append([])
         match_scores.append([])
 
-    for product in tqdm(input_df['Libellé produit'], desc="Matching products"):
+    total_products = len(input_df['Libellé produit'])
+    progress_bar = st.progress(0)
+    progress_text = st.empty()
+
+    for index, product in enumerate(input_df['Libellé produit']):
         best_matches = find_best_matches(product, database_products)
 
         for i in range(4):
@@ -87,7 +88,13 @@ def match_products(input_df, database_df):
                 matched_products[i].append("No match")
                 match_scores[i].append(0)
 
-    result_df = input_df.iloc[:, :4].copy()
+        progress_bar.progress((index + 1) / total_products)
+        progress_text.text(f"Matching products: {index + 1}/{total_products}")
+
+    progress_bar.empty()
+    progress_text.empty()
+
+    result_df = input_df.copy()
     for i in range(1, 5):
         result_df[f'Closest Match {i}'] = matched_products[i - 1]
         result_df[f'Score {i}'] = match_scores[i - 1]
@@ -95,9 +102,16 @@ def match_products(input_df, database_df):
     return result_df
 
 def plot_match_scores(df):
+    required_columns = [f'Score {i}' for i in range(1, 5)]
+    missing_columns = [col for col in required_columns if col not in df.columns]
+
+    if missing_columns:
+        st.error(f"Missing columns in DataFrame: {', '.join(missing_columns)}")
+        return
+
     fig, ax = plt.subplots(1, 2, figsize=(18, 6))
 
-    sns.histplot(df[[f'Score {i}' for i in range(1, 5)]].values.flatten(), bins=20, kde=True, ax=ax[0])
+    sns.histplot(df[required_columns].values.flatten(), bins=20, kde=True, ax=ax[0])
     ax[0].set_title('Distribution of Match Scores')
     ax[0].set_xlabel('Score')
     ax[0].set_ylabel('Count')
@@ -111,7 +125,6 @@ def plot_match_scores(df):
     ax[1].legend()
 
     st.pyplot(fig)
-
 
 # Streamlit file uploaders
 input_file = st.file_uploader("Upload Input CSV File", type=["csv"])
@@ -128,7 +141,6 @@ if input_file and database_file:
         st.write("Match Scores Distribution")
         plot_match_scores(matched_df)
 
-        matched_df.to_csv('matched_products.csv', sep=';', index=False, encoding='utf-8')
         st.download_button(
             label="Download Matched Products CSV",
             data=matched_df.to_csv(index=False, sep=';').encode('utf-8'),
