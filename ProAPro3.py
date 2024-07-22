@@ -94,7 +94,14 @@ def match_products(input_df, database_df):
     progress_bar.empty()
     progress_text.empty()
 
-    result_df = input_df[['N article', 'famille', 'Sous famille', 'Libellé produit']].copy()
+    # Ensure required columns exist
+    required_columns = ['N° article', 'Famille', 'Sous-famille', 'Libellé produit']
+    missing_columns = [col for col in required_columns if col not in input_df.columns]
+    if missing_columns:
+        st.error(f"Missing columns in input data: {', '.join(missing_columns)}")
+        return pd.DataFrame()
+
+    result_df = input_df[required_columns].copy()
     for i in range(1, 5):
         result_df[f'Closest Match {i}'] = matched_products[i - 1]
         result_df[f'Score {i}'] = match_scores[i - 1]
@@ -102,7 +109,7 @@ def match_products(input_df, database_df):
     return result_df
 
 def plot_match_scores(df):
-    required_columns = [f'Score {i}' for i in range(1, 5)]
+    required_columns = [f'Score {i}' for i in range(1, 4)]
     missing_columns = [col for col in required_columns if col not in df.columns]
 
     if missing_columns:
