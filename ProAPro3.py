@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import google.generativeai as genai
-
+from tqdm import tqdm
 
 # Set your Google Cloud API key
 google_api_key = "AIzaSyCcgTczWOlqBMjVjOkcqDJyeE10TsjdkCE"
@@ -63,27 +63,36 @@ def get_similarity_score(product1, product2):
         return 0
 
 def match_products(input_df, database_df):
+    try:
+        database_products = database_df['Produit'].tolist()
+    except KeyError:
+        st.error("The database file must contain a column named 'Produit'.")
+        return pd.DataFrame()
+
     matched_products = []
-    total_products = len(input_df['Libellé produit'])
+    match_scores = []
 
-    # Create a Streamlit progress bar
-    progress_bar = st.progress(0)
-    progress_text = st.empty()
+    for i in range(1, 5):
+        matched_products.append([])
+        match_scores.append([])
 
-    for index, product in enumerate(input_df['Libellé produit']):
-        # Your matching logic here
-        matched_products.append(product)  # Example logic
+    for product in tqdm(input_df['Libellé produit'], desc="Matching products"):
+        best_matches = find_best_matches(product, database_products)
 
-        # Update progress bar and text
-        progress_bar.progress((index + 1) / total_products)
-        progress_text.text(f"Matching products: {(index + 1)}/{total_products}")
+        for i in range(4):
+            if i < len(best_matches) and best_matches[i] != "no_match":
+                matched_products[i].append(best_matches[i])
+                match_scores[i].append(get_similarity_score(product, best_matches[i]))
+            else:
+                matched_products[i].append("No match")
+                match_scores[i].append(0)
 
-    # Clear progress bar and text
-    progress_bar.empty()
-    progress_text.empty()
+    result_df = input_df.iloc[:, :4].copy()
+    for i in range(1, 5):
+        result_df[f'Closest Match {i}'] = matched_products[i - 1]
+        result_df[f'Score {i}'] = match_scores[i - 1]
 
-    matched_df = pd.DataFrame(matched_products, columns=['Matched Products'])
-    return matched_df
+    return result_df
 
 def plot_match_scores(df):
     fig, ax = plt.subplots(1, 2, figsize=(18, 6))
