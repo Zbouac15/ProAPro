@@ -3,3 +3,4 @@ pandas
 matplotlib
 seaborn
 google-generativeai
+google-auth
