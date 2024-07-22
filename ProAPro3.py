@@ -94,7 +94,7 @@ def match_products(input_df, database_df):
     progress_bar.empty()
     progress_text.empty()
 
-    result_df = input_df.copy()
+    result_df = input_df[['N article', 'famille', 'Sous famille', 'Libellé produit']].copy()
     for i in range(1, 5):
         result_df[f'Closest Match {i}'] = matched_products[i - 1]
         result_df[f'Score {i}'] = match_scores[i - 1]
