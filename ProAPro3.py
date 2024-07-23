@@ -109,7 +109,7 @@ def match_products(input_df, database_df):
     return result_df
 
 def plot_match_scores(df):
-    required_columns = [f'Score {i}' for i in range(1, 4)]
+    required_columns = [f'Score {i}' for i in range(1, 5)]
     missing_columns = [col for col in required_columns if col not in df.columns]
 
     if missing_columns:
@@ -154,3 +154,14 @@ if input_file and database_file:
             file_name='matched_products.csv',
             mime='text/csv',
         )
+
+        # Create result cards
+        num_matched = matched_df.shape[0]
+        avg_score = matched_df[[f'Score {i}' for i in range(1, 5)]].mean().mean()
+        score_distribution = matched_df[[f'Score {i}' for i in range(1, 5)]].values.flatten()
+
+        with st.sidebar:
+            st.metric(label="Number of Products Matched", value=num_matched)
+            st.metric(label="Average Matching Score", value=round(avg_score, 2))
+            st.write("Match Score Distribution")
+            st.bar_chart(score_distribution)
