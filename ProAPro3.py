@@ -148,7 +148,7 @@ if input_file and database_file:
         st.write("Match Scores Distribution")
         plot_match_scores(matched_df)
 
-         st.download_button(
+        st.download_button(
         label="Download Matched Products CSV",
         data=matched_df.to_csv(index=False, sep=';', encoding='utf-8-sig').encode('utf-8'),
         file_name='matched_products.csv',
