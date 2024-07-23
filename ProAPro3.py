@@ -11,7 +11,7 @@ genai.configure(api_key=google_api_key)
 # Choose your Gemini model
 model = genai.GenerativeModel(model_name="gemini-1.5-pro")
 
-st.title("Product Matching App")
+st.title("ProAPro article matching - Demo")
 
 def load_data(input_file, database_file):
     input_df = pd.read_csv(input_file, sep=';', encoding='utf-8')
